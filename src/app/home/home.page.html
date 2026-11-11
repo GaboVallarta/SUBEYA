@@ -1,20 +1,50 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Subeya
-    </ion-title>
+  <ion-toolbar color="success">
+    <!-- Botón de menú a la izquierda -->
+    <ion-button slot="start" fill="clear" color="dark">
+      <ion-icon name="menu-outline" style="font-size: 28px;"></ion-icon>
+    </ion-button>
+
+    <ion-title class="ion-text-center">Subeya</ion-title>
+
+    <!-- Botón de perfil a la derecha -->
+    <ion-button slot="end" fill="clear" color="dark">
+      <ion-icon name="person-outline" style="font-size: 28px;"></ion-icon>
+    </ion-button>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
+<ion-content [fullscreen]="true" class="ion-padding">
+  
   <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+    
+    <!-- Tarjeta superior de Camión -->
+    <div class="camion-banner">
+      <ion-button expand="block" color="warning" shape="round">
+        CAMIÓN: ###
+      </ion-button>
+    </div>
+
+    <!-- Sección de Capacidad -->
+    <div class="seccion-card">
+      <div class="imagen-contenedor">
+        <img src="../../assets/icon/camióntuneado.jpeg" alt="Capacidad">
+      </div>
+      <ion-button expand="block" color="light" class="btn-accion" shape="round">
+        Revisar capacidad
+      </ion-button>
+    </div>
+
+    <!-- Sección de Ruta -->
+    <div class="seccion-card">
+      <div class="imagen-contenedor">
+        <img src="../../assets/icon/camióntuneado.jpeg" alt="Ruta">
+      </div>
+      <ion-button expand="block" color="light" class="btn-accion" shape="round">
+        Revisar ruta
+      </ion-button>
+    </div>
+
   </div>
+
 </ion-content>
