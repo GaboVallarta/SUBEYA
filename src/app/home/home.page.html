@@ -1,50 +1,29 @@
 <ion-header [translucent]="true">
   <ion-toolbar color="success">
-    <!-- Botón de menú a la izquierda -->
     <ion-button slot="start" fill="clear" color="dark">
       <ion-icon name="menu-outline" style="font-size: 28px;"></ion-icon>
     </ion-button>
-
     <ion-title class="ion-text-center">Subeya</ion-title>
-
-    <!-- Botón de perfil a la derecha -->
-    <ion-button slot="end" fill="clear" color="dark">
-      <ion-icon name="person-outline" style="font-size: 28px;"></ion-icon>
-    </ion-button>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
-  
-  <div id="container">
+  <div id="container" style="display: flex; flex-direction: column; justify-content: center; height: 100%; max-width: 400px; margin: 0 auto; gap: 20px;">
     
-    <!-- Tarjeta superior de Camión -->
-    <div class="camion-banner">
-      <ion-button expand="block" color="warning" shape="round">
-        CAMIÓN: ###
-      </ion-button>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h2>Selecciona tu unidad</h2>
+      <p style="color: #444;">Elige el camión para iniciar ruta</p>
     </div>
 
-    <!-- Sección de Capacidad -->
-    <div class="seccion-card">
-      <div class="imagen-contenedor">
-        <img src="../../assets/icon/camióntuneado.jpeg" alt="Capacidad">
-      </div>
-      <ion-button expand="block" color="light" class="btn-accion" shape="round">
-        Revisar capacidad
-      </ion-button>
-    </div>
+    
+    <ion-button color="primary" expand="block" shape="round" size="large" (click)="seleccionarYRedirigir('c-110')">
+      🚎 Camión C-110
+    </ion-button>
 
-    <!-- Sección de Ruta -->
-    <div class="seccion-card">
-      <div class="imagen-contenedor">
-        <img src="../../assets/icon/camióntuneado.jpeg" alt="Ruta">
-      </div>
-      <ion-button expand="block" color="light" class="btn-accion" shape="round">
-        Revisar ruta
-      </ion-button>
-    </div>
+    
+    <ion-button color="danger" expand="block" shape="round" size="large" (click)="seleccionarYRedirigir('b-72')">
+      🚌 Camión B-72
+    </ion-button>
 
   </div>
-
 </ion-content>

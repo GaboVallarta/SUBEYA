@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { 
   IonHeader, 
   IonToolbar, 
@@ -9,7 +10,7 @@ import {
   IonIcon 
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { menuOutline, personOutline } from 'ionicons/icons';
+import { menuOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-home',
@@ -23,12 +24,17 @@ import { menuOutline, personOutline } from 'ionicons/icons';
     IonTitle, 
     IonContent, 
     IonButton, 
-    IonIcon // <-- Necesario para las líneas y el monito del header
+    IonIcon 
   ],
 })
 export class HomePage {
-  constructor() {
-    // Registramos los íconos para que Ionic los muestre sin problema
-    addIcons({ menuOutline, personOutline });
+
+  constructor(private router: Router) {
+    addIcons({ menuOutline });
+  }
+
+
+  seleccionarYRedirigir(unidad: string) {
+    this.router.navigate(['/select-unit', unidad]);
   }
 }

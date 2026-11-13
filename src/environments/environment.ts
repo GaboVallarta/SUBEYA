@@ -2,8 +2,11 @@
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+// src/environments/environment.ts
 export const environment = {
-  production: false
+  production: false,
+  supabaseUrl: 'https://unbdscplqmeltksnweew.supabase.co',
+  supabaseKey: 'sb_publishable_wxTqDyqgrx5eDDxrEqe04w_0fDy7zd-'
 };
 
 /*

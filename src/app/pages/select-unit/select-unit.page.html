@@ -1,0 +1,71 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="success">
+    <ion-button slot="start" fill="clear" color="dark">
+      <ion-icon name="menu-outline" style="font-size: 28px;"></ion-icon>
+    </ion-button>
+    <ion-title class="ion-text-center">Subeya</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div id="container" style="max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- BANNER CON DESPLEGABLE PARA CAMBIAR DE UNIDAD -->
+    <div class="camion-banner" style="position: relative; width: 100%;">
+      <ion-button expand="block" color="warning" shape="round" class="banner-activo" (click)="toggleMenu()">
+        CAMIÓN: {{ numeroCamion }} 
+        <ion-icon [name]="menuAbierto ? 'chevron-up-outline' : 'chevron-down-outline'" slot="end"></ion-icon>
+      </ion-button>
+
+      <!-- MINI MENÚ FLOTANTE -->
+      <div *ngIf="menuAbierto" class="mini-menu" style="margin-top: 10px; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 8px; z-index: 10;">
+        <p style="text-align: center; font-weight: bold; color: #333; margin: 0 0 5px 0; font-size: 14px;">Cambiar unidad:</p>
+        <ion-button color="primary" expand="block" shape="round" (click)="seleccionarCamion('c-110')">
+          🚎 Camión C-110
+        </ion-button>
+        <ion-button color="danger" expand="block" shape="round" (click)="seleccionarCamion('b-72')">
+          🚌 Camión B-72
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE CAPACIDAD (Basada en los 5 estados) -->
+    <ion-card style="border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: 0; background: #ffffff;">
+      <ion-card-header>
+        <ion-card-title style="font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px; color: #333;">
+          <ion-icon name="people-outline" color="success"></ion-icon>
+          Capacidad Actual
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content style="text-align: center; padding-bottom: 20px;">
+        
+        <!-- Indicador visual dinámico según el estado -->
+        <div [ngStyle]="obtenerEstiloEstado(estadoCapacidad)" style="padding: 15px 20px; border-radius: 12px; font-size: 22px; font-weight: bold; margin: 10px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+          {{ estadoCapacidad }}
+        </div>
+
+        <p style="color: #666; margin-top: 10px; font-size: 13px;">Listo para sincronizar con datos en tiempo real</p>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- SECCIÓN DE MAPA INTERACTIVO Y PARADAS -->
+    <ion-card style="border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: 0; background: #ffffff;">
+      <ion-card-header>
+        <ion-card-title style="font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px; color: #333;">
+          <ion-icon name="map-outline" color="primary"></ion-icon>
+          Ruta y Paradas
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <!-- Contenedor visual del mapa -->
+        <div style="width: 100%; height: 200px; background: #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 2px dashed #cbd5e1; margin-bottom: 15px;">
+          <ion-icon name="location-outline" style="font-size: 36px; color: #3880ff; margin-bottom: 5px;"></ion-icon>
+          <p style="font-weight: bold; color: #334155; margin: 0; font-size: 15px;">Mapa Interactivo de Ruta</p>
+          <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Esperando coordenadas geográficas...</p>
+        </div>
+
+      </ion-card-content>
+    </ion-card>
+
+  </div>
+</ion-content>
