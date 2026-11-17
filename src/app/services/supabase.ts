@@ -12,36 +12,41 @@ export class SupabaseService {
     this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey);
   }
 
-  // 1. Obtener todas las unidades (para el menú desplegable o listados)
   getUnidades() {
     return this.supabase.from('unidades').select('*');
   }
 
-  // 2. Obtener una unidad específica por su número económico (ej. 'C-110')
+  // Buscar la unidad y su ruta relacionada usando el código (ej. 'C110' o 'B72')
   async getUnidadPorNumero(numeroEconomico: string) {
+    // Limpiamos el texto para que 'C-110' busque 'C110' o similar de forma flexible
+    const codigoBusqueda = numeroEconomico.replace(/-/g, '').trim(); // Convierte 'C-110' en 'C110'
+
     const { data, error } = await this.supabase
       .from('unidades')
       .select(`
         id,
         numero_economico,
         estado_actual,
-        rutas (
+        rutas!inner (
           id,
           codigo,
           descripcion
         )
       `)
-      .ilike('numero_economico', numeroEconomico)
-      .single();
+      .ilike('rutas.codigo', `%${codigoBusqueda}%`); // Buscamos dentro de la tabla de rutas asociada
 
     if (error) {
       console.error('Error al obtener unidad:', error);
       return null;
     }
-    return data;
+
+    if (data && data.length > 0) {
+      return data[0]; // Devolvemos el primer resultado encontrado
+    }
+    
+    return null;
   }
 
-  // 3. Obtener el último registro de ocupación para saber los pasajeros
   async getUltimaOcupacion(unidadId: string) {
     const { data, error } = await this.supabase
       .from('registros_ocupacion')
@@ -57,7 +62,6 @@ export class SupabaseService {
     return data;
   }
 
-  // 4. Obtener las paradas de una ruta ordenadas por su campo 'orden'
   async getParadasPorRuta(rutaId: string) {
     const { data, error } = await this.supabase
       .from('paradas')
@@ -72,7 +76,6 @@ export class SupabaseService {
     return data;
   }
 
-  // 5. Obtener la última ubicación registrada del camión (última parada detectada)
   async getUltimaUbicacion(unidadId: string) {
     const { data, error } = await this.supabase
       .from('registros_ubicacion')

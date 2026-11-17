@@ -90,37 +90,69 @@ export class SelectUnitPage implements OnInit {
     await this.cargarDatosUnidad(this.numeroCamion);
   }
 
-  // Método para consultar Supabase
+ // Método para consultar Supabase con depuración estilo "cout"
   async cargarDatosUnidad(nombreUnidad: string) {
-    if (nombreUnidad === '###') return;
+    if (nombreUnidad === '###') {
+      console.log('🛑 [DEBUG] No se consulta nada, el camión está en "###"');
+      return;
+    }
+
+    console.log(`🔍 [DEBUG] Intentando buscar en Supabase la unidad: "${nombreUnidad}"`);
 
     try {
-      // Suponiendo que tu tabla 'unidades' tiene columnas como 'nombre' (o 'codigo') y 'capacidad' / 'estado'
-      const { data, error } = await this.supabaseService.getUnidades();
+      // 1. Probemos usando el método específico que creamos para buscar por número económico
+      const unidad = await this.supabaseService.getUnidadPorNumero(nombreUnidad);
+      console.log('📦 [DEBUG] Resultado crudo de getUnidadPorNumero:', unidad);
 
-      if (error) {
-        console.error('Error al consultar Supabase:', error);
+      if (!unidad) {
+        console.warn(`⚠️ [DEBUG] No se encontró ninguna unidad con el número económico: "${nombreUnidad}" en la tabla 'unidades'.`);
         return;
       }
 
-      if (data) {
-        // Buscamos la unidad correspondiente en el arreglo devuelto por Supabase
-        // (Ajusta la condición 'u.nombre' o 'u.codigo' según cómo nombras la columna en tu BD)
-        const unidadEncontrada = data.find((u: any) => 
-          u.nombre?.toLowerCase() === nombreUnidad.toLowerCase() || 
-          u.codigo?.toLowerCase() === nombreUnidad.toLowerCase()
-        );
+      console.log('✅ [DEBUG] Unidad encontrada en la BD:', unidad);
+      console.log('🆔 [DEBUG] ID de la unidad (UUID):', unidad.id);
+      
+      // Hacemos un cast seguro por si Supabase lo infiere como arreglo
+      const rutaInfo: any = Array.isArray(unidad.rutas) ? unidad.rutas[0] : unidad.rutas;
+      console.log('🗺️ [DEBUG] Información de la ruta asociada:', rutaInfo);
 
-        if (unidadEncontrada) {
-          // Asignamos el estado real que viene de Supabase (ej. 'Vacío', 'Lleno', etc.)
-          this.estadoCapacidad = unidadEncontrada.capacidad || unidadEncontrada.estado || 'Vacío';
+      // 2. Consultar la ocupación usando el ID real de la unidad
+      const ocupacion = await this.supabaseService.getUltimaOcupacion(unidad.id);
+      console.log('👥 [DEBUG] Último registro de ocupación obtenido:', ocupacion);
+      
+      const totalPasajeros = ocupacion?.pasajeros_totales || 0;
+      this.estadoCapacidad = this.calcularEstadoCapacidad(totalPasajeros);
+      console.log(`📊 [DEBUG] Pasajeros totales: ${totalPasajeros} | Estado asignado: "${this.estadoCapacidad}"`);
+
+      // 3. Consultar las paradas de la ruta usando rutaInfo.id
+      if (rutaInfo?.id) {
+        const listaParadas = await this.supabaseService.getParadasPorRuta(rutaInfo.id);
+        console.log('🚏 [DEBUG] Paradas obtenidas para esta ruta:', listaParadas);
+        if (listaParadas.length > 0) {
+          this.paradas = listaParadas;
         }
       }
+
+      // 4. Consultar la última ubicación detectada
+      const ultimaUbicacion = await this.supabaseService.getUltimaUbicacion(unidad.id);
+      console.log('📍 [DEBUG] Última ubicación registrada:', ultimaUbicacion);
+
     } catch (err) {
-      console.error('Excepción al conectar con la API:', err);
+      console.error('❌ [DEBUG] Excepción crítica al conectar con la API de Supabase:', err);
     }
   }
 
+  // Función auxiliar para traducir los pasajeros a tus 5 estados
+  calcularEstadoCapacidad(pasajeros: number): string {
+    console.log(`🧮 [DEBUG] Calculando estado para ${pasajeros} pasajeros...`);
+    if (pasajeros === 0) return 'Vacío';
+    if (pasajeros <= 10) return 'Disponibilidad alta';
+    if (pasajeros <= 20) return 'Disponibilidad media';
+    if (pasajeros <= 30) return 'Disponibilidad baja';
+    return 'Lleno';
+  }
+
+  // Función para dar estilo/color dinámico según el estado de la capacidad
   obtenerEstiloEstado(estado: string) {
     switch (estado) {
       case 'Vacío':
