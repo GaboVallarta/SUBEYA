@@ -33,8 +33,10 @@ export class HomePage {
     addIcons({ menuOutline });
   }
 
-
-  seleccionarYRedirigir(unidad: string) {
-    this.router.navigate(['/select-unit', unidad]);
+  // Ahora mandamos el ID de la ruta y el nombre visual como parámetros de navegación
+  seleccionarYRedirigir(idRuta: string, nombreVisual: string) {
+    this.router.navigate(['/select-unit', idRuta], {
+      queryParams: { nombre: nombreVisual }
+    });
   }
 }

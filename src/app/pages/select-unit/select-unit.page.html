@@ -18,12 +18,15 @@
       <!-- MINI MENÚ FLOTANTE -->
       <div *ngIf="menuAbierto" class="mini-menu"
         style="margin-top: 10px; background: rgba(255, 255, 255, 0.95); padding: 12px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 8px; z-index: 10;">
-        <p style="text-align: center; font-weight: bold; color: #333; margin: 0 0 5px 0; font-size: 14px;">Cambiar
-          unidad:</p>
-        <ion-button color="primary" expand="block" shape="round" (click)="seleccionarCamion('C110')">
+        <p style="text-align: center; font-weight: bold; color: #333; margin: 0 0 5px 0; font-size: 14px;">Cambiar unidad:</p>
+        
+        <!-- Pasamos el ID exacto de la ruta/unidad -->
+        <ion-button color="primary" expand="block" shape="round" (click)="seleccionarCamion('b1e4b232-ea33-48ad-b876-080a75953729', 'C-110')">
           🚎 Camión C-110
         </ion-button>
-        <ion-button color="danger" expand="block" shape="round" (click)="seleccionarCamion('B72')">
+        
+        <!-- Reemplaza este ID con el UUID real de tu C-72 si es diferente -->
+        <ion-button color="danger" expand="block" shape="round" (click)="seleccionarCamion('42444e2e-2c36-44ed-8d03-05ebed687f7f', 'C-72')">
           🚌 Camión C-72
         </ion-button>
       </div>
@@ -51,6 +54,7 @@
     </ion-card>
 
     <!-- SECCIÓN DE MAPA INTERACTIVO Y PARADAS -->
+    <!-- SECCIÓN DE MAPA INTERACTIVO Y PARADAS -->
     <ion-card style="border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: 0; background: #ffffff;">
       <ion-card-header>
         <ion-card-title
@@ -62,10 +66,30 @@
       <ion-card-content>
         <!-- Contenedor visual del mapa -->
         <div
-          style="width: 100%; height: 200px; background: #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 2px dashed #cbd5e1; margin-bottom: 15px;">
+          style="width: 100%; height: 160px; background: #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 2px dashed #cbd5e1; margin-bottom: 15px;">
           <ion-icon name="location-outline" style="font-size: 36px; color: #3880ff; margin-bottom: 5px;"></ion-icon>
           <p style="font-weight: bold; color: #334155; margin: 0; font-size: 15px;">Mapa Interactivo de Ruta</p>
-          <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Esperando coordenadas geográficas...</p>
+          <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">{{ ultimaUbicacionTexto || 'Esperando última ubicación...' }}</p>
+        </div>
+
+        <!-- LISTA DINÁMICA DE PARADAS TRAÍDAS DE SUPABASE -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <p style="font-weight: bold; color: #475569; font-size: 14px; margin: 0 0 4px 0;">Paradas de la ruta:</p>
+          
+          <div *ngFor="let parada of paradas; let i = index" 
+               style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="background: #3880ff; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
+                {{ parada.orden || (i + 1) }}
+              </span>
+              <span style="font-size: 14px; color: #1e293b; font-weight: 500;">
+                {{ parada.nombre_parada || parada.nombre }}
+              </span>
+            </div>
+            <span style="font-size: 12px; color: #64748b; background: #e2e8f0; padding: 3px 8px; border-radius: 6px;">
+              {{ parada.estado || 'En ruta' }}
+            </span>
+          </div>
         </div>
 
       </ion-card-content>

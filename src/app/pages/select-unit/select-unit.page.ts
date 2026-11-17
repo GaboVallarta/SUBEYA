@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { 
@@ -22,7 +22,7 @@ import {
   mapOutline, 
   locationOutline 
 } from 'ionicons/icons';
-import { SupabaseService } from '../../services/supabase'; // Ajusta la ruta relativa según dónde tengas tu servicio
+import { SupabaseService } from '../../services/supabase';
 
 @Component({
   selector: 'app-select-unit',
@@ -47,19 +47,15 @@ export class SelectUnitPage implements OnInit {
   numeroCamion: string = '###';
   menuAbierto: boolean = false;
 
-  // Estado inicial de capacidad
   estadoCapacidad: string = 'Vacío';
-
-  paradas: any[] = [
-    { id: 1, nombre: 'Parada #1', estado: 'Pendiente' },
-    { id: 2, nombre: 'Parada #2', estado: 'Pendiente' },
-    { id: 'last', nombre: 'Última parada del camión', estado: 'Destino final' }
-  ];
+  ultimaUbicacionTexto: string = '';
+  paradas: any[] = [];
 
   constructor(
     private router: Router, 
     private route: ActivatedRoute,
-    private supabaseService: SupabaseService // Inyectamos el servicio
+    private supabaseService: SupabaseService,
+    private cdr: ChangeDetectorRef // <--- 1. Inyectado correctamente aquí
   ) {
     addIcons({ 
       menuOutline, 
@@ -71,80 +67,90 @@ export class SelectUnitPage implements OnInit {
     });
   }
 
-  async ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.numeroCamion = id.toUpperCase();
+async ngOnInit() {
+    const idRuta = this.route.snapshot.paramMap.get('id');
+    // Leemos el nombre desde los queryParams (?nombre=C-110)
+    const nombreVisual = this.route.snapshot.queryParamMap.get('nombre');
+
+    if (idRuta) {
+      this.numeroCamion = nombreVisual ? nombreVisual.toUpperCase() : 'UNIDAD';
+      await this.cargarDatosPorIdRuta(idRuta);
+      this.cdr.detectChanges();
     }
-    // Cargamos los datos de la unidad al iniciar
-    await this.cargarDatosUnidad(this.numeroCamion);
   }
 
   toggleMenu() {
     this.menuAbierto = !this.menuAbierto;
   }
 
-  async seleccionarCamion(unidad: string) {
-    this.numeroCamion = unidad.toUpperCase();
+  // 2. Al seleccionar del menú, actualizamos el texto y refrescamos la vista de inmediato
+  async seleccionarCamion(idRuta: string, nombreVisual: string) {
+    this.numeroCamion = nombreVisual.toUpperCase();
     this.menuAbierto = false; 
-    await this.cargarDatosUnidad(this.numeroCamion);
+    
+    // Consultamos usando el ID de la ruta
+    await this.cargarDatosPorIdRuta(idRuta);
+    
+    // Forzamos la actualización visual para que el contador cambie al instante
+    this.cdr.detectChanges();
   }
 
- // Método para consultar Supabase con depuración estilo "cout"
-  async cargarDatosUnidad(nombreUnidad: string) {
-    if (nombreUnidad === '###') {
-      console.log('🛑 [DEBUG] No se consulta nada, el camión está en "###"');
-      return;
-    }
-
-    console.log(`🔍 [DEBUG] Intentando buscar en Supabase la unidad: "${nombreUnidad}"`);
+  // Método específico para buscar por ID de ruta (el UUID que me pasaste)
+  async cargarDatosPorIdRuta(rutaId: string) {
+    console.log(`🔍 [DEBUG] Buscando unidad por ID de ruta: "${rutaId}"`);
 
     try {
-      // 1. Probemos usando el método específico que creamos para buscar por número económico
-      const unidad = await this.supabaseService.getUnidadPorNumero(nombreUnidad);
-      console.log('📦 [DEBUG] Resultado crudo de getUnidadPorNumero:', unidad);
+      // Buscamos directamente en unidades filtrando por ruta_id
+      const { data: unidadData, error: errorUnidad } = await this.supabaseService.getUnidades()
+        .eq('ruta_id', rutaId)
+        .single();
 
-      if (!unidad) {
-        console.warn(`⚠️ [DEBUG] No se encontró ninguna unidad con el número económico: "${nombreUnidad}" en la tabla 'unidades'.`);
+      if (errorUnidad || !unidadData) {
+        console.warn(`⚠️ [DEBUG] No se encontró unidad para el ID de ruta: "${rutaId}"`, errorUnidad);
         return;
       }
 
-      console.log('✅ [DEBUG] Unidad encontrada en la BD:', unidad);
-      console.log('🆔 [DEBUG] ID de la unidad (UUID):', unidad.id);
-      
-      // Hacemos un cast seguro por si Supabase lo infiere como arreglo
-      const rutaInfo: any = Array.isArray(unidad.rutas) ? unidad.rutas[0] : unidad.rutas;
-      console.log('🗺️ [DEBUG] Información de la ruta asociada:', rutaInfo);
+      console.log('✅ [DEBUG] Unidad encontrada por ID:', unidadData);
 
-      // 2. Consultar la ocupación usando el ID real de la unidad
-      const ocupacion = await this.supabaseService.getUltimaOcupacion(unidad.id);
-      console.log('👥 [DEBUG] Último registro de ocupación obtenido:', ocupacion);
-      
+      // Consultar la ocupación usando el ID de la unidad
+      const ocupacion = await this.supabaseService.getUltimaOcupacion(unidadData.id);
       const totalPasajeros = ocupacion?.pasajeros_totales || 0;
       this.estadoCapacidad = this.calcularEstadoCapacidad(totalPasajeros);
-      console.log(`📊 [DEBUG] Pasajeros totales: ${totalPasajeros} | Estado asignado: "${this.estadoCapacidad}"`);
+      console.log(`📊 [DEBUG] Pasajeros totales: ${totalPasajeros} | Estado: "${this.estadoCapacidad}"`);
 
-      // 3. Consultar las paradas de la ruta usando rutaInfo.id
-      if (rutaInfo?.id) {
-        const listaParadas = await this.supabaseService.getParadasPorRuta(rutaInfo.id);
-        console.log('🚏 [DEBUG] Paradas obtenidas para esta ruta:', listaParadas);
-        if (listaParadas.length > 0) {
-          this.paradas = listaParadas;
-        }
+      // Consultar las paradas de la ruta
+      const listaParadas = await this.supabaseService.getParadasPorRuta(rutaId);
+      if (listaParadas.length > 0) {
+        this.paradas = listaParadas;
       }
 
-      // 4. Consultar la última ubicación detectada
-      const ultimaUbicacion = await this.supabaseService.getUltimaUbicacion(unidad.id);
-      console.log('📍 [DEBUG] Última ubicación registrada:', ultimaUbicacion);
+      // Consultar la última ubicación
+      const ultimaUbicacion = await this.supabaseService.getUltimaUbicacion(unidadData.id);
+      if (ultimaUbicacion && ultimaUbicacion.paradas) {
+        const nombreParada = (ultimaUbicacion.paradas as any).nombre_parada;
+        this.ultimaUbicacionTexto = `Última detección en: ${nombreParada}`;
+      } else {
+        this.ultimaUbicacionTexto = 'Sin registros recientes de ubicación';
+      }
 
     } catch (err) {
-      console.error('❌ [DEBUG] Excepción crítica al conectar con la API de Supabase:', err);
+      console.error('❌ [DEBUG] Excepción al buscar por ID:', err);
     }
   }
 
-  // Función auxiliar para traducir los pasajeros a tus 5 estados
+  // Método original por si se entra por URL con parámetro
+  async cargarDatosUnidad(nombreUnidad: string) {
+    if (nombreUnidad === '###') return;
+    const unidad = await this.supabaseService.getUnidadPorNumero(nombreUnidad);
+    if (unidad && unidad.rutas) {
+      const rutaInfo: any = Array.isArray(unidad.rutas) ? unidad.rutas[0] : unidad.rutas;
+      if (rutaInfo?.id) {
+        await this.cargarDatosPorIdRuta(rutaInfo.id);
+      }
+    }
+  }
+
   calcularEstadoCapacidad(pasajeros: number): string {
-    console.log(`🧮 [DEBUG] Calculando estado para ${pasajeros} pasajeros...`);
     if (pasajeros === 0) return 'Vacío';
     if (pasajeros <= 10) return 'Disponibilidad alta';
     if (pasajeros <= 20) return 'Disponibilidad media';
@@ -152,7 +158,6 @@ export class SelectUnitPage implements OnInit {
     return 'Lleno';
   }
 
-  // Función para dar estilo/color dinámico según el estado de la capacidad
   obtenerEstiloEstado(estado: string) {
     switch (estado) {
       case 'Vacío':

@@ -1,6 +1,5 @@
 <ion-header [translucent]="true">
   <ion-toolbar color="success">
-    
     <ion-title class="ion-text-center">Subeya</ion-title>
   </ion-toolbar>
 </ion-header>
@@ -13,14 +12,14 @@
       <p style="color: #444;">Elige el camión para iniciar ruta</p>
     </div>
 
-    
-    <ion-button color="primary" expand="block" shape="round" size="large" (click)="seleccionarYRedirigir('c-110')">
+    <!-- Mandamos el UUID de C-110 y su texto bonito -->
+    <ion-button color="primary" expand="block" shape="round" size="large" (click)="seleccionarYRedirigir('b1e4b232-ea33-48ad-b876-080a75953729', 'C-110')">
       Camión C-110
     </ion-button>
 
-    
-    <ion-button color="danger" expand="block" shape="round" size="large" (click)="seleccionarYRedirigir('b-72')">
-      Camión B-72
+    <!-- Mandamos el UUID de C-72 y su texto bonito -->
+    <ion-button color="danger" expand="block" shape="round" size="large" (click)="seleccionarYRedirigir('42444e2e-2c36-44ed-8d03-05ebed687f7f', 'C-72')">
+      Camión C-72
     </ion-button>
 
   </div>
