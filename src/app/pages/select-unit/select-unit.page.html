@@ -53,26 +53,20 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- SECCIÓN DE MAPA INTERACTIVO Y PARADAS -->
-    <!-- SECCIÓN DE MAPA INTERACTIVO Y PARADAS -->
+   <!-- SECCIÓN DE MAPA INTERACTIVO Y PARADAS -->
     <ion-card style="border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin: 0; background: #ffffff;">
       <ion-card-header>
-        <ion-card-title
-          style="font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px; color: #333;">
+        <ion-card-title style="font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px; color: #333;">
           <ion-icon name="map-outline" color="primary"></ion-icon>
-          Ruta y Paradas
+          Ruta y Paradas en Tiempo Real
         </ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <!-- Contenedor visual del mapa -->
-        <div
-          style="width: 100%; height: 160px; background: #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 2px dashed #cbd5e1; margin-bottom: 15px;">
-          <ion-icon name="location-outline" style="font-size: 36px; color: #3880ff; margin-bottom: 5px;"></ion-icon>
-          <p style="font-weight: bold; color: #334155; margin: 0; font-size: 15px;">Mapa Interactivo de Ruta</p>
-          <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">{{ ultimaUbicacionTexto || 'Esperando última ubicación...' }}</p>
-        </div>
+        
+        <!-- Contenedor real del Mapa con Leaflet -->
+        <div id="map" style="width: 100%; height: 300px; border-radius: 12px; margin-bottom: 15px; z-index: 1;"></div>
 
-        <!-- LISTA DINÁMICA DE PARADAS TRAÍDAS DE SUPABASE -->
+        <!-- LISTA DINÁMICA DE PARADAS -->
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <p style="font-weight: bold; color: #475569; font-size: 14px; margin: 0 0 4px 0;">Paradas de la ruta:</p>
           

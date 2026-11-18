@@ -1,12 +1,13 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import * as L from 'leaflet';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
-  IonButton, 
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButton,
   IonIcon,
   IonCard,
   IonCardHeader,
@@ -14,13 +15,13 @@ import {
   IonCardContent
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { 
-  menuOutline, 
-  chevronDownOutline, 
-  chevronUpOutline, 
-  peopleOutline, 
-  mapOutline, 
-  locationOutline 
+import {
+  menuOutline,
+  chevronDownOutline,
+  chevronUpOutline,
+  peopleOutline,
+  mapOutline,
+  locationOutline
 } from 'ionicons/icons';
 import { SupabaseService } from '../../services/supabase';
 
@@ -30,12 +31,12 @@ import { SupabaseService } from '../../services/supabase';
   styleUrls: ['./select-unit.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, 
-    IonHeader, 
-    IonToolbar, 
-    IonTitle, 
-    IonContent, 
-    IonButton, 
+    CommonModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonButton,
     IonIcon,
     IonCard,
     IonCardHeader,
@@ -43,38 +44,70 @@ import { SupabaseService } from '../../services/supabase';
     IonCardContent
   ]
 })
-export class SelectUnitPage implements OnInit {
+export class SelectUnitPage implements OnInit, AfterViewInit {
+  private map: any;
+  private markersLayer = L.layerGroup(); 
+  
   numeroCamion: string = '###';
   menuAbierto: boolean = false;
-
   estadoCapacidad: string = 'Vacío';
   ultimaUbicacionTexto: string = '';
   paradas: any[] = [];
 
   constructor(
-    private router: Router, 
+    private router: Router,
     private route: ActivatedRoute,
     private supabaseService: SupabaseService,
-    private cdr: ChangeDetectorRef // <--- 1. Inyectado correctamente aquí
+    private cdr: ChangeDetectorRef
   ) {
-    addIcons({ 
-      menuOutline, 
-      chevronDownOutline, 
-      chevronUpOutline, 
-      peopleOutline, 
-      mapOutline, 
-      locationOutline 
+    addIcons({
+      menuOutline,
+      chevronDownOutline,
+      chevronUpOutline,
+      peopleOutline,
+      mapOutline,
+      locationOutline
     });
   }
 
-async ngOnInit() {
+  ngAfterViewInit() {
+    this.initMap();
+  }
+
+  // Añade este método en tu SelectUnitPage
+  ionViewDidEnter() {
+    if (this.map) {
+      this.map.invalidateSize(); // Fuerza a Leaflet a recalcular el contenedor completo
+    }
+  }
+  // Inicializar el mapa base (centrado por defecto)
+  initMap() {
+    if (this.map) return;
+
+    // Coordenadas iniciales (puedes ajustarlas al centro de tu ruta)
+    this.map = L.map('map').setView([20.6597, -103.3496], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(this.map);
+
+    this.markersLayer.addTo(this.map);
+
+    // Forzar redibujado inicial
+    setTimeout(() => {
+      this.map.invalidateSize();
+    }, 100);
+  }
+
+  async ngOnInit() {
     const idRuta = this.route.snapshot.paramMap.get('id');
-    // Leemos el nombre desde los queryParams (?nombre=C-110)
     const nombreVisual = this.route.snapshot.queryParamMap.get('nombre');
 
     if (idRuta) {
       this.numeroCamion = nombreVisual ? nombreVisual.toUpperCase() : 'UNIDAD';
-      await this.cargarDatosPorIdRuta(idRuta);
+      // Pasamos el nombreVisual para que el mapa sepa qué color pintar desde el inicio
+      await this.cargarDatosPorIdRuta(idRuta, this.numeroCamion);
       this.cdr.detectChanges();
     }
   }
@@ -83,24 +116,20 @@ async ngOnInit() {
     this.menuAbierto = !this.menuAbierto;
   }
 
-  // 2. Al seleccionar del menú, actualizamos el texto y refrescamos la vista de inmediato
+  // Al seleccionar del menú flotante
   async seleccionarCamion(idRuta: string, nombreVisual: string) {
     this.numeroCamion = nombreVisual.toUpperCase();
-    this.menuAbierto = false; 
-    
-    // Consultamos usando el ID de la ruta
-    await this.cargarDatosPorIdRuta(idRuta);
-    
-    // Forzamos la actualización visual para que el contador cambie al instante
+    this.menuAbierto = false;
+
+    await this.cargarDatosPorIdRuta(idRuta, this.numeroCamion);
     this.cdr.detectChanges();
   }
 
-  // Método específico para buscar por ID de ruta (el UUID que me pasaste)
-  async cargarDatosPorIdRuta(rutaId: string) {
+  // Método principal para buscar por ID de ruta y actualizar ocupación, paradas y mapa
+  async cargarDatosPorIdRuta(rutaId: string, nombreCamion: string) {
     console.log(`🔍 [DEBUG] Buscando unidad por ID de ruta: "${rutaId}"`);
 
     try {
-      // Buscamos directamente en unidades filtrando por ruta_id
       const { data: unidadData, error: errorUnidad } = await this.supabaseService.getUnidades()
         .eq('ruta_id', rutaId)
         .single();
@@ -112,7 +141,7 @@ async ngOnInit() {
 
       console.log('✅ [DEBUG] Unidad encontrada por ID:', unidadData);
 
-      // Consultar la ocupación usando el ID de la unidad
+      // Consultar la ocupación
       const ocupacion = await this.supabaseService.getUltimaOcupacion(unidadData.id);
       const totalPasajeros = ocupacion?.pasajeros_totales || 0;
       this.estadoCapacidad = this.calcularEstadoCapacidad(totalPasajeros);
@@ -133,20 +162,61 @@ async ngOnInit() {
         this.ultimaUbicacionTexto = 'Sin registros recientes de ubicación';
       }
 
+      // 🗺️ PINTAR EN EL MAPA
+      this.actualizarMapaConRutaYParadas(listaParadas, ultimaUbicacion, nombreCamion);
+
     } catch (err) {
       console.error('❌ [DEBUG] Excepción al buscar por ID:', err);
     }
   }
 
-  // Método original por si se entra por URL con parámetro
-  async cargarDatosUnidad(nombreUnidad: string) {
-    if (nombreUnidad === '###') return;
-    const unidad = await this.supabaseService.getUnidadPorNumero(nombreUnidad);
-    if (unidad && unidad.rutas) {
-      const rutaInfo: any = Array.isArray(unidad.rutas) ? unidad.rutas[0] : unidad.rutas;
-      if (rutaInfo?.id) {
-        await this.cargarDatosPorIdRuta(rutaInfo.id);
+  // Función para dibujar la línea de ruta y los pines en Leaflet
+  actualizarMapaConRutaYParadas(paradas: any[], ultimaUbicacion: any, nombreCamion: string) {
+    if (!this.map) return;
+
+    // Limpiamos pines anteriores
+    this.markersLayer.clearLayers();
+
+    // Definir color según el camión (Azul para C-110, Rojo para C-72)
+    const colorRuta = nombreCamion.includes('110') ? '#3880ff' : '#eb444a';
+
+    const latLngs: L.LatLngExpression[] = [];
+
+    paradas.forEach((parada, index) => {
+      // Validar que la parada tenga lat y lng en tu BD
+      if (parada.lat && parada.lng) {
+        const coord: [number, number] = [parada.lat, parada.lng];
+        latLngs.push(coord);
+
+        // Detectar si esta parada es la última registrada
+        const esUltima = ultimaUbicacion && ultimaUbicacion.paradas?.nombre_parada === parada.nombre_parada;
+
+        // Crear pin personalizado
+        const iconoPin = L.divIcon({
+          className: 'custom-pin',
+          html: `<div style="background-color: ${esUltima ? '#ffc409' : colorRuta}; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 10px;">${index + 1}</div>`,
+          iconSize: [24, 24]
+        });
+
+        const marker = L.marker(coord, { icon: iconoPin });
+
+        if (esUltima) {
+          marker.bindPopup(`<b>¡Última parada que tomó!</b><br>${parada.nombre_parada}`).openPopup();
+        } else {
+          marker.bindPopup(`<b>Parada:</b> ${parada.nombre_parada}`);
+        }
+
+        this.markersLayer.addLayer(marker);
       }
+    });
+
+    // Dibujar la línea de la ruta que conecta las paradas
+    if (latLngs.length > 0) {
+      const polyline = L.polyline(latLngs, { color: colorRuta, weight: 5, opacity: 0.7 });
+      this.markersLayer.addLayer(polyline);
+
+      // Centrar el mapa automáticamente en la ruta
+      this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
     }
   }
 
